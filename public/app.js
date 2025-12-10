@@ -1,15 +1,18 @@
 // --- FIREBASE CONFIG (REPLACE YOURS) ---
 const firebaseConfig = {
-  apiKey: "AIzaSyAR585ISkkdacPyJsTy_vtkfRnFUFT80Iw",
-  authDomain: "uslife-mm.firebaseapp.com",
-  projectId: "uslife-mm",
-  storageBucket: "uslife-mm.firebasestorage.app",
-  messagingSenderId: "780321403782",
-  appId: "1:780321403782:web:157a1b619d9edf8877b207",
-  measurementId: "G-3MZNCBRDE4",
+  apiKey: "AIzaSyDDgTSaN2gBMBK1RlaDtPfhPWAhPLuEOOQ",
+  authDomain: "uslife-m.firebaseapp.com",
+  projectId: "uslife-m",
+  storageBucket: "uslife-m.firebasestorage.app",
+  messagingSenderId: "248045870142",
+  appId: "1:248045870142:web:f307468262b990f4dd456f",
+  measurementId: "G-DMVXE48QTQ"
 };
 
-firebase.initializeApp(firebaseConfig);
+// Firebase က မပွင့်သေးဘူးဆိုမှ ဖွင့်မယ် (ပွင့်ပြီးသားဆို ကျော်သွားမယ်)
+if (!firebase.apps.length) {
+   firebase.initializeApp(firebaseConfig);
+}
 
 // *** Offline Persistence Enable (Must be before creating db/auth instances if possible, or right after) ***
 const db = firebase.firestore();
@@ -50,63 +53,84 @@ function logout() {
 }
 
 // --- AUTH STATE LISTENER (WHITELIST PROTECTION & LOADING FIX) ---
+// auth.onAuthStateChanged((user) => {
+//   const loader = document.getElementById("loadingOverlay");
+
+//   if (user) {
+//     // User ရှိရင် Whitelist စစ်မယ် (Loading ဆက်ပြထားမယ်)
+//     const userEmail = user.email;
+
+//     db.collection("whitelist")
+//       .doc(userEmail)
+//       .get()
+//       .then((doc) => {
+//         // Whitelist စစ်ပြီးပြီမို့ Loading ကို ဖျောက်မယ်
+//         if (loader) loader.style.display = "none";
+
+//         if (doc.exists) {
+//           // (က) Whitelist ထဲမှာ ရှိတယ် -> App ဖွင့်ပေးမယ်
+//           currentUser = user;
+//           document.getElementById("authScreen").classList.remove("active");
+//           document.getElementById("appScreen").classList.add("active");
+
+//           // Header Profile Update
+//           const photoEl = document.getElementById("headerUserPhoto");
+//           const nameEl = document.getElementById("headerUserName");
+
+//           if (photoEl)
+//             photoEl.src = user.photoURL || "https://via.placeholder.com/40";
+//           if (nameEl) 
+//             nameEl.textContent = user.displayName ? user.displayName.split(" ")[0] : "User";
+
+//           // Load Data
+//           const picker = document.getElementById("monthPicker");
+//           if(picker) picker.value = currentMonth;
+          
+//           loadData();
+//           filterDataByMonth();
+
+//         } else {
+//           // (ခ) Whitelist ထဲမှာ မရှိဘူး -> Logout လုပ်မယ်
+//           alert("Access Denied: Your email is not whitelisted.");
+//           auth.signOut();
+//           document.getElementById("authScreen").classList.add("active");
+//           document.getElementById("appScreen").classList.remove("active");
+//           currentUser = null;
+//         }
+//       })
+//       .catch((error) => {
+//         // Error တက်ရင်လည်း Loading ပိတ်ပြီး Login ပြန်ပို့မယ်
+//         if (loader) loader.style.display = "none";
+//         console.error("Error checking whitelist:", error);
+//         alert("Connection Error. Please try again.");
+//         auth.signOut();
+//       });
+
+//   } else {
+//     // User မရှိရင် (Logout ဖြစ်နေရင်) Loading ပိတ်ပြီး Login Screen ပြမယ်
+//     if (loader) loader.style.display = "none";
+    
+//     document.getElementById("authScreen").classList.add("active");
+//     document.getElementById("appScreen").classList.remove("active");
+//     currentUser = null;
+//   }
+// });
+
+// --- AUTH STATE LISTENER (SIMPLIFIED) ---
 auth.onAuthStateChanged((user) => {
   const loader = document.getElementById("loadingOverlay");
+  if (loader) loader.style.display = "none"; // Loading ပိတ်မယ်
 
   if (user) {
-    // User ရှိရင် Whitelist စစ်မယ် (Loading ဆက်ပြထားမယ်)
-    const userEmail = user.email;
-
-    db.collection("whitelist")
-      .doc(userEmail)
-      .get()
-      .then((doc) => {
-        // Whitelist စစ်ပြီးပြီမို့ Loading ကို ဖျောက်မယ်
-        if (loader) loader.style.display = "none";
-
-        if (doc.exists) {
-          // (က) Whitelist ထဲမှာ ရှိတယ် -> App ဖွင့်ပေးမယ်
-          currentUser = user;
-          document.getElementById("authScreen").classList.remove("active");
-          document.getElementById("appScreen").classList.add("active");
-
-          // Header Profile Update
-          const photoEl = document.getElementById("headerUserPhoto");
-          const nameEl = document.getElementById("headerUserName");
-
-          if (photoEl)
-            photoEl.src = user.photoURL || "https://via.placeholder.com/40";
-          if (nameEl) 
-            nameEl.textContent = user.displayName ? user.displayName.split(" ")[0] : "User";
-
-          // Load Data
-          const picker = document.getElementById("monthPicker");
-          if(picker) picker.value = currentMonth;
-          
-          loadData();
-          filterDataByMonth();
-
-        } else {
-          // (ခ) Whitelist ထဲမှာ မရှိဘူး -> Logout လုပ်မယ်
-          alert("Access Denied: Your email is not whitelisted.");
-          auth.signOut();
-          document.getElementById("authScreen").classList.add("active");
-          document.getElementById("appScreen").classList.remove("active");
-          currentUser = null;
-        }
-      })
-      .catch((error) => {
-        // Error တက်ရင်လည်း Loading ပိတ်ပြီး Login ပြန်ပို့မယ်
-        if (loader) loader.style.display = "none";
-        console.error("Error checking whitelist:", error);
-        alert("Connection Error. Please try again.");
-        auth.signOut();
-      });
-
-  } else {
-    // User မရှိရင် (Logout ဖြစ်နေရင်) Loading ပိတ်ပြီး Login Screen ပြမယ်
-    if (loader) loader.style.display = "none";
+    // Whitelist မစစ်တော့ဘူး၊ တန်းပေးဝင်မယ်
+    currentUser = user;
+    document.getElementById("authScreen").classList.remove("active");
+    document.getElementById("appScreen").classList.add("active");
     
+    // ကျန်တဲ့ data load တာတွေ ဆက်လုပ်မယ်...
+    loadData();
+    filterDataByMonth();
+  } else {
     document.getElementById("authScreen").classList.add("active");
     document.getElementById("appScreen").classList.remove("active");
     currentUser = null;

@@ -21,7 +21,7 @@
     <title>US Life Guide</title>
 
     <!-- Manifest Link -->
-    <link rel="manifest" href="manifest.json" />
+    <!-- <link rel="manifest" href="manifest.json" /> -->
 
     <!-- Icons (iOS & Favicon) -->
     <link rel="apple-touch-icon" href="icons/icon-192.png" />
@@ -34,7 +34,6 @@
       href="https://cdn-icons-png.flaticon.com/512/330/330459.png"
     />
 
-
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
@@ -43,11 +42,17 @@
     <link rel="stylesheet" href="styles.css" />
 
     <!-- Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script defer src="/__/firebase/10.13.2/firebase-app-compat.js"></script>
+    <script defer src="/__/firebase/10.13.2/firebase-auth-compat.js"></script>
+    <script
+      defer
+      src="/__/firebase/10.13.2/firebase-firestore-compat.js"
+    ></script>
 
-    <script>
+    <script defer src="/__/firebase/10.13.2/firebase-remote-config-compat.js"></script>
+    <script defer src="/__/firebase/init.js"></script>
+
+    <!-- <script>
       // --- PWA INSTALL LOGIC (ROBUST VERSION) ---
 
       // 1. Event ကို Global Variable ထဲမှာ သိမ်းမယ်
@@ -103,10 +108,9 @@
             .catch((err) => console.log("SW Failed", err));
         });
       }
-    </script>
+    </script> -->
   </head>
   <body>
-
     <!-- Auth Screen -->
     <div id="authScreen" class="screen active">
       <div class="center-box">
@@ -869,6 +873,6 @@
       </div>
     </div>
 
-    <script src="app.js"></script>
+    <script defer src="app.js"></script>
   </body>
 </html>
