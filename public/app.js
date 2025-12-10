@@ -39,114 +39,164 @@ remoteConfig.settings = {
 };
 
 let currentUser = null;
+let userSubscription = null; // To store plan status
 let currentMonth = new Date().toISOString().slice(0, 7);
 
 // --- AUTH ---
 function signIn() {
-  auth
-    .signInWithPopup(new firebase.auth.GoogleAuthProvider())
-    .catch((e) => alert(e.message));
+  const provider = new firebase.auth.GoogleAuthProvider();
+  // ဒီလိုင်းက အကောင့်ရွေးခိုင်းတဲ့ function ပါ
+  provider.setCustomParameters({ prompt: 'select_account' });
+  
+  auth.signInWithPopup(provider);
 }
 function logout() {
   auth.signOut();
-  location.reload();
+  window.location.reload();
 }
 
 // --- AUTH STATE LISTENER (WHITELIST PROTECTION & LOADING FIX) ---
-// auth.onAuthStateChanged((user) => {
-//   const loader = document.getElementById("loadingOverlay");
-
-//   if (user) {
-//     // User ရှိရင် Whitelist စစ်မယ် (Loading ဆက်ပြထားမယ်)
-//     const userEmail = user.email;
-
-//     db.collection("whitelist")
-//       .doc(userEmail)
-//       .get()
-//       .then((doc) => {
-//         // Whitelist စစ်ပြီးပြီမို့ Loading ကို ဖျောက်မယ်
-//         if (loader) loader.style.display = "none";
-
-//         if (doc.exists) {
-//           // (က) Whitelist ထဲမှာ ရှိတယ် -> App ဖွင့်ပေးမယ်
-//           currentUser = user;
-//           document.getElementById("authScreen").classList.remove("active");
-//           document.getElementById("appScreen").classList.add("active");
-
-//           // Header Profile Update
-//           const photoEl = document.getElementById("headerUserPhoto");
-//           const nameEl = document.getElementById("headerUserName");
-
-//           if (photoEl)
-//             photoEl.src = user.photoURL || "https://via.placeholder.com/40";
-//           if (nameEl) 
-//             nameEl.textContent = user.displayName ? user.displayName.split(" ")[0] : "User";
-
-//           // Load Data
-//           const picker = document.getElementById("monthPicker");
-//           if(picker) picker.value = currentMonth;
-          
-//           loadData();
-//           filterDataByMonth();
-
-//         } else {
-//           // (ခ) Whitelist ထဲမှာ မရှိဘူး -> Logout လုပ်မယ်
-//           alert("Access Denied: Your email is not whitelisted.");
-//           auth.signOut();
-//           document.getElementById("authScreen").classList.add("active");
-//           document.getElementById("appScreen").classList.remove("active");
-//           currentUser = null;
-//         }
-//       })
-//       .catch((error) => {
-//         // Error တက်ရင်လည်း Loading ပိတ်ပြီး Login ပြန်ပို့မယ်
-//         if (loader) loader.style.display = "none";
-//         console.error("Error checking whitelist:", error);
-//         alert("Connection Error. Please try again.");
-//         auth.signOut();
-//       });
-
-//   } else {
-//     // User မရှိရင် (Logout ဖြစ်နေရင်) Loading ပိတ်ပြီး Login Screen ပြမယ်
-//     if (loader) loader.style.display = "none";
-    
-//     document.getElementById("authScreen").classList.add("active");
-//     document.getElementById("appScreen").classList.remove("active");
-//     currentUser = null;
-//   }
-// });
-
-// --- AUTH STATE LISTENER (SIMPLIFIED) ---
 auth.onAuthStateChanged((user) => {
   const loader = document.getElementById("loadingOverlay");
-  if (loader) loader.style.display = "none"; // Loading ပိတ်မယ်
+  if(loader) loader.style.display = "none";
 
   if (user) {
-    // Whitelist မစစ်တော့ဘူး၊ တန်းပေးဝင်မယ်
+    // Login ဝင်တာ အောင်မြင်သည်
     currentUser = user;
+    
+    // UI ပြောင်းမယ်
     document.getElementById("authScreen").classList.remove("active");
     document.getElementById("appScreen").classList.add("active");
     
-    // ကျန်တဲ့ data load တာတွေ ဆက်လုပ်မယ်...
-    loadData();
-    filterDataByMonth();
+    // Header ပုံပြောင်းမယ်
+    const photoEl = document.getElementById("headerUserPhoto");
+    if(photoEl) photoEl.src = user.photoURL;
+
+    // Subscription စစ်ဆေးမယ်
+    checkSubscriptionStatus(user.uid);
+
   } else {
+    // Login မဝင်ရသေးပါ
     document.getElementById("authScreen").classList.add("active");
     document.getElementById("appScreen").classList.remove("active");
     currentUser = null;
   }
 });
 
+// --- AUTH STATE LISTENER (SIMPLIFIED) ---
+// auth.onAuthStateChanged((user) => {
+//   const loader = document.getElementById("loadingOverlay");
+//   if (loader) loader.style.display = "none"; // Loading ပိတ်မယ်
+
+//   if (user) {
+//     // Whitelist မစစ်တော့ဘူး၊ တန်းပေးဝင်မယ်
+//     currentUser = user;
+//     document.getElementById("authScreen").classList.remove("active");
+//     document.getElementById("appScreen").classList.add("active");
+    
+//     // ကျန်တဲ့ data load တာတွေ ဆက်လုပ်မယ်...
+//     loadData();
+//     filterDataByMonth();
+//   } else {
+//     document.getElementById("authScreen").classList.add("active");
+//     document.getElementById("appScreen").classList.remove("active");
+//     currentUser = null;
+//   }
+// });
+
+// Subscription စစ်ဆေးခြင်း
+function checkSubscriptionStatus(uid) {
+    db.collection("users").doc(uid).onSnapshot((doc) => {
+        const badge = document.getElementById("subBadge");
+        
+        if (doc.exists) {
+            const data = doc.data();
+            const now = Date.now();
+            
+            // သက်တမ်းစစ်ခြင်း
+            if (data.plan === 'lifetime' || (data.expiry && data.expiry > now)) {
+                // Premium User
+                userSubscription = { active: true, plan: data.plan };
+                if(badge) {
+                    badge.innerText = "Premium 👑";
+                    badge.className = "sub-badge premium";
+                }
+                loadData(); // Data ပေးပေါ်မယ်
+            } else {
+                // Expired User
+                userSubscription = { active: false, plan: 'expired' };
+                if(badge) {
+                    badge.innerText = "Expired ⚠️";
+                    badge.className = "sub-badge expired";
+                }
+                showLockedUI(); // Data ပိတ်မယ်
+            }
+        } else {
+            // New User (Database ထဲမှာ မရှိသေးသူ)
+            userSubscription = { active: false, plan: 'free' };
+            if(badge) {
+                badge.innerText = "Free User";
+                badge.className = "sub-badge free";
+            }
+            
+            // Database ထဲမှာ User အသစ်စာရင်းသွင်းမယ်
+            db.collection("users").doc(uid).set({
+                email: currentUser.email,
+                plan: 'free',
+                joined: Date.now()
+            }, { merge: true }); // merge: true က ရှိပြီးသားဆို မဖျက်ပစ်ဘူး
+            
+            showLockedUI();
+        }
+    }, (error) => {
+        console.error("Database Error:", error);
+        // Rules မှားနေရင် ဒီ error တက်မယ်
+        if(error.code === 'permission-denied') {
+             alert("Database Permission Error: Please update Firestore Rules!");
+        }
+    });
+}
+
+function checkAccessAndRun(callback) {
+    if (userSubscription && userSubscription.active) {
+        callback();
+    } else {
+        openPaywall();
+    }
+}
+
+function openPaywall() {
+    const modal = document.getElementById("paywallModal");
+    if(modal) modal.style.display = "flex";
+}
+
+function showLockedUI() {
+    const totalBal = document.getElementById("totalBalance");
+    const transList = document.getElementById("transList");
+    
+    if(totalBal) totalBal.innerText = "🔒 Locked";
+    if(transList) {
+        transList.innerHTML = `
+        <div style="text-align:center; padding:30px; color:#888;">
+            <i class="fas fa-lock" style="font-size:30px; margin-bottom:15px;"></i><br>
+            Please buy Premium to view data.
+        </div>`;
+    }
+}
+
 // --- TABS ---
 function switchTab(tabName) {
-  document
-    .querySelectorAll(".tab-content")
-    .forEach((el) => el.classList.remove("active"));
-  document.getElementById(`tab-${tabName}`).classList.add("active");
-  document
-    .querySelectorAll(".nav-item")
-    .forEach((el) => el.classList.remove("active"));
-  event.currentTarget.classList.add("active");
+    if (tabName === 'guides' || tabName === 'wallet') {
+        if (!userSubscription || !userSubscription.active) {
+            openPaywall();
+            return; 
+        }
+    }
+    
+    document.querySelectorAll(".tab-content").forEach((el) => el.classList.remove("active"));
+    document.getElementById(`tab-${tabName}`).classList.add("active");
+    document.querySelectorAll(".nav-item").forEach((el) => el.classList.remove("active"));
+    event.currentTarget.classList.add("active");
 }
 
 // --- NEW HELPER: GET ICON ---
@@ -166,6 +216,7 @@ function getCategoryIcon(cat) {
 
 // --- UPDATED LOAD DATA (For Subscriptions) ---
 function loadData() {
+  if (!currentUser) return;
   // 1. Subscriptions Load
   db.collection("subscriptions")
     .where("uid", "==", currentUser.uid)
@@ -547,12 +598,58 @@ function saveSub() {
 function closeModal(id) {
   document.getElementById(id).style.display = "none";
 }
+
 function deleteItem(col, id) {
   if (confirm("Delete this item?"))
     db.collection(col)
       .doc(id)
       .delete()
       .then(() => filterDataByMonth());
+}
+
+// CSS for Paywall Options
+const style = document.createElement('style');
+style.innerHTML = `
+    .sub-badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; cursor: pointer; }
+    .sub-badge.free { background: #eee; color: #555; }
+    .sub-badge.expired { background: #fee2e2; color: #dc2626; }
+    .sub-badge.premium { background: #dbeafe; color: #2563eb; }
+    
+    .pricing-option {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 15px; border: 1px solid #eee; margin-bottom: 10px;
+        border-radius: 8px; cursor: pointer; position: relative;
+    }
+    .pricing-option:hover { border-color: #2563eb; background: #f8fafc; }
+    .pricing-option.popular { border: 2px solid #2563eb; background: #eff6ff; }
+    .badge { position: absolute; top: -10px; right: 10px; background: #2563eb; color: white; font-size: 10px; padding: 2px 6px; border-radius: 4px; }
+    
+    .contact-btn {
+        display: block; width: 100%; padding: 12px;
+        background: #2563eb; color: white; text-align: center;
+        border-radius: 8px; text-decoration: none; font-weight: bold;
+    }
+`;
+document.head.appendChild(style);
+
+// --- GUIDES GRID GENERATOR (LOCKED) ---
+function loadGuidesGrid() {
+    const guides = [
+        {id: 'id', icon: '🪪', title: 'ID / SSN'},
+        {id: 'driving', icon: '🚗', title: 'Driving License'},
+        // ... Add other guides keys
+    ];
+    
+    const grid = document.getElementById("guidesGrid");
+    grid.innerHTML = "";
+    
+    guides.forEach(g => {
+        const div = document.createElement("div");
+        div.className = "menu-item";
+        div.onclick = () => showGuide(g.id); // Check logic handles access
+        div.innerHTML = `<div class="g-icon">${g.icon}</div><div class="g-title">${g.title}</div>`;
+        grid.appendChild(div);
+    });
 }
 
 // --- DETAILED GUIDES CONTENT (Updated) ---
@@ -997,9 +1094,11 @@ const guidesData = {
 };
 
 function showGuide(key) {
+  checkAccessAndRun(() => {
   document.getElementById("guideTitle").innerText = key.toUpperCase();
   document.getElementById("guideContent").innerHTML = guidesData[key];
   document.getElementById("guideModal").style.display = "flex";
+  });
 }
 
 function searchMap(query) {
