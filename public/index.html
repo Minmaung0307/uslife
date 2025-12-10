@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="my">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+
+    <!-- PWA Theme Color -->
+    <meta name="theme-color" content="#2563EB" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="US Life" />
+
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <title>US Life Guide</title>
+
+    <!-- Manifest Link -->
+    <link rel="manifest" href="manifest.json" />
+
+    <!-- Icons (iOS & Favicon) -->
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <link rel="icon" type="image/png" href="icons/icon-192.png" />
+
+    <!-- Favicon -->
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://cdn-icons-png.flaticon.com/512/330/330459.png"
+    />
+
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+
+    <link rel="stylesheet" href="styles.css" />
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+    <script>
+      // --- PWA INSTALL LOGIC (ROBUST VERSION) ---
+
+      // 1. Event ကို Global Variable ထဲမှာ သိမ်းမယ်
+      window.deferredPrompt = null;
+
+      window.addEventListener("beforeinstallprompt", (e) => {
+        // Browser ရဲ့ အလိုအလျောက် Banner ကို တားမယ်
+        e.preventDefault();
+
+        // Event ကို သိမ်းထားမယ် (ခလုတ်နှိပ်မှ ပြန်သုံးမယ်)
+        window.deferredPrompt = e;
+        console.log("✅ Install Event Captured and Saved!");
+
+        // Install ခလုတ်ကို အရောင်ပြောင်းပြီး သိသာအောင်လုပ်မယ် (Optional)
+        const btn = document.querySelector(".install-box button");
+        if (btn) btn.style.color = "#00E676"; // Green
+      });
+
+      async function installApp() {
+        const promptEvent = window.deferredPrompt;
+
+        if (promptEvent) {
+          // 2. သိမ်းထားတဲ့ Event ရှိရင် Install Box ကို ဖော်မယ်
+          promptEvent.prompt();
+
+          // User ရွေးချယ်မှုကို စောင့်မယ်
+          const { outcome } = await promptEvent.userChoice;
+          console.log(`User selected: ${outcome}`);
+
+          // သုံးပြီးရင် variable ကို ပြန်ရှင်းမယ်
+          window.deferredPrompt = null;
+        } else {
+          // 3. Event မရှိရင် (Install ပြီးသား / iOS / Error)
+          alert(
+            "App is already installed or use the Browser Menu (⋮) to install."
+          );
+
+          // Mobile Tooltip
+          const tip = document.querySelector(".install-tip");
+          if (tip) {
+            tip.classList.add("show-mobile");
+            setTimeout(() => tip.classList.remove("show-mobile"), 5000);
+          }
+        }
+      }
+
+      // Service Worker Registration
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("./service-worker.js")
+            .then((reg) => console.log("SW Registered"))
+            .catch((err) => console.log("SW Failed", err));
+        });
+      }
+    </script>
+  </head>
+  <body>
+
+    <!-- Auth Screen -->
+    <div id="authScreen" class="screen active">
+      <div class="center-box">
+        <h1>🇺🇸 US Life Guide</h1>
+        <p>ဘဝနေထိုင်မှု၊ ငွေကြေးနှင့် အထွေထွေလမ်းညွှန်</p>
+        <button onclick="signIn()" class="btn-google">
+          <i class="fab fa-google"></i> Login with Google
+        </button>
+      </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="appScreen" class="screen">
+      <header>
+        <div class="logo">US Life 🇺🇸</div>
+
+        <div style="display: flex; gap: 15px; align-items: center">
+          <!-- INSTALL ICON & TOOLTIP -->
+          <div class="install-box">
+            <!-- onclick="installApp()" ကို ထပ်ဖြည့်လိုက်ပါ -->
+            <button class="icon-btn" onclick="installApp()">
+              <i class="fas fa-download"></i>
+            </button>
+
+            <!-- Tooltip (အဟောင်းအတိုင်းထားပါ) -->
+            <div class="install-tip">
+              <div style="margin-bottom: 5px">
+                <i class="fab fa-apple"></i> <b>iOS (Safari):</b><br />
+                Share <i class="fas fa-share-square"></i> နှိပ်ပြီး "Add to Home
+                Screen" ကို ရွေးပါ။
+              </div>
+              <div>
+                <i class="fab fa-android"></i> <b>Android (Chrome):</b><br />
+                Menu <i class="fas fa-ellipsis-v"></i> နှိပ်ပြီး "Install App"
+                ကို ရွေးပါ။
+              </div>
+            </div>
+          </div>
+
+          <!-- NEW USER PROFILE & LOGOUT -->
+          <div class="header-profile" onclick="logout()" title="Logout">
+            <img id="headerUserPhoto" src="" alt="User" />
+            <span id="headerUserName">User</span>
+            <i
+              class="fas fa-sign-out-alt"
+              style="margin-left: 5px; font-size: 12px; opacity: 0.8"
+            ></i>
+          </div>
+        </div>
+      </header>
+
+      <div id="contentArea">
+        <!-- 1. WALLET TAB -->
+        <div id="tab-wallet" class="tab-content active">
+          <!-- Month & Year Controls -->
+          <div class="date-controls">
+            <input
+              type="month"
+              id="monthPicker"
+              onchange="filterDataByMonth()"
+            />
+            <button onclick="openYearModal()" class="btn-year">
+              <i class="fas fa-calendar-alt"></i> Year
+            </button>
+          </div>
+
+          <!-- 1. Modern Balance Card -->
+          <div class="wallet-card">
+            <div class="card-header">
+              <span>Total Balance</span>
+              <i class="fas fa-wallet"></i>
+            </div>
+            <h1 id="totalBalance">$0.00</h1>
+            <div class="card-footer">
+              <div class="stat">
+                <span class="arrow-up"
+                  ><i class="fas fa-arrow-down"></i> Income</span
+                >
+                <span id="incDisplay" class="val">$0.00</span>
+              </div>
+              <div class="vertical-line"></div>
+              <div class="stat">
+                <span class="arrow-down"
+                  ><i class="fas fa-arrow-up"></i> Expense</span
+                >
+                <span id="expDisplay" class="val">$0.00</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Budget Health Bar (New Feature) -->
+          <div class="budget-health">
+            <div class="health-label">
+              <span>Monthly Budget Used</span>
+              <span id="budgetPercent">0%</span>
+            </div>
+            <div class="progress-bg">
+              <div
+                id="progressBar"
+                class="progress-fill"
+                style="width: 0%"
+              ></div>
+            </div>
+
+            <!-- အရောင် သတ်မှတ်ချက်များ (Legend) -->
+            <div class="budget-legend">
+              <div class="legend-item">
+                <span class="dot-indicator green"></span> < 50% (Good)
+              </div>
+              <div class="legend-item">
+                <span class="dot-indicator orange"></span> 50-80% (Careful)
+              </div>
+              <div class="legend-item">
+                <span class="dot-indicator red"></span> > 80% (Danger)
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Action Buttons (Circle Icons) -->
+          <div class="quick-actions">
+            <!-- Income Button -->
+            <div
+              onclick="openTransModal('income')"
+              class="tooltip-btn"
+              data-tooltip="လစာ၊ ဘောနပ်စ်၊ အပိုဝင်ငွေများ ထည့်ရန်"
+            >
+              <div class="circle-btn inc"><i class="fas fa-plus"></i></div>
+              <span>Income</span>
+            </div>
+
+            <!-- Expense Button -->
+            <div
+              onclick="openTransModal('expense')"
+              class="tooltip-btn"
+              data-tooltip="နေ့စဉ် အသုံးစရိတ်များ (မုန့်ဖိုး/ဈေးဖိုး) ထည့်ရန်"
+            >
+              <div class="circle-btn exp"><i class="fas fa-minus"></i></div>
+              <span>Expense</span>
+            </div>
+
+            <!-- Subscription Button -->
+            <div
+              onclick="openSubModal()"
+              class="tooltip-btn"
+              data-tooltip="လစဉ်ပေး စရိတ်များ (အိမ်လခ/ဖုန်းဘေလ်) ထည့်ရန်"
+            >
+              <div class="circle-btn sub"><i class="fas fa-sync"></i></div>
+              <span>Sub</span>
+            </div>
+          </div>
+
+          <!-- 4. Subscriptions (Mini Cards) -->
+          <h3 class="section-title">🔄 Subscriptions</h3>
+          <div id="subList" class="horizontal-scroll">
+            <!-- JS will inject items here -->
+          </div>
+
+          <!-- 5. Transactions List (Beautiful List) -->
+          <h3 class="section-title">📝 Recent History</h3>
+          <div id="transList" class="transaction-list">
+            <!-- JS will inject items here -->
+          </div>
+
+          <!-- ဒီနေရာမှာ Footer ထည့်ပါ -->
+          <div class="app-footer">
+            @Powered by MM, <span id="currentYear"></span>
+          </div>
+
+          <!-- Spacer -->
+          <div style="height: 100px"></div>
+        </div>
+
+        <!-- (အကြံပြုချက်) Modal တွေကို Tab အပြင်ဘက် (Body အောက်ဆုံး) မှာ ထားတာ ပိုကောင်းပါတယ် -->
+        <!-- YEARLY REPORT MODAL -->
+        <div id="yearModal" class="modal">
+          <div class="modal-box">
+            <h3>📅 နှစ်ချုပ် စာရင်းချုပ် (Yearly Summary)</h3>
+
+            <div style="margin-bottom: 20px">
+              <label>Select Year:</label>
+              <select
+                id="yearSelect"
+                onchange="calculateYearly()"
+                style="padding: 8px; width: 100px"
+              >
+                <option value="2024">2024</option>
+                <option value="2025" selected>2025</option>
+                <option value="2026">2026</option>
+                <option value="2027">2027</option>
+              </select>
+            </div>
+
+            <div
+              class="balance-card"
+              style="box-shadow: none; border: 1px solid #eee"
+            >
+              <small>Net Saving (စုဆောင်းမိငွေ)</small>
+              <h2 id="yearNet" style="color: #2563eb">$0.00</h2>
+              <div class="row">
+                <div class="green">ဝင်ငွေ: <span id="yearInc">$0</span></div>
+                <div class="red">သုံးငွေ: <span id="yearExp">$0</span></div>
+              </div>
+            </div>
+
+            <div
+              style="
+                margin-top: 20px;
+                text-align: left;
+                font-size: 0.9rem;
+                color: #555;
+              "
+            >
+              <p>
+                ℹ️ <b>မှတ်ချက်:</b> လစဉ်ပေး (Subscription) များကို (၁၂) လစာ
+                မြှောက်ပြီး ထည့်သွင်းတွက်ချက်ထားပါသည်။
+              </p>
+            </div>
+
+            <button
+              onclick="document.getElementById('yearModal').style.display='none'"
+              style="
+                margin-top: 20px;
+                background: #555;
+                color: white;
+                padding: 10px;
+                border: none;
+                width: 100%;
+                border-radius: 5px;
+              "
+            >
+              Close
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. GUIDES TAB -->
+        <div id="tab-guides" class="tab-content">
+          <h3>📚 လမ်းညွှန်များ (Guides)</h3>
+          <div class="grid-menu">
+            <!-- 1. ID/SSN -->
+            <div
+              class="menu-item"
+              onclick="showGuide('id')"
+              style="background: #e3f2fd; color: #1565c0"
+            >
+              <div class="g-icon">🪪</div>
+              <div class="g-title">ID / SSN / EAD</div>
+            </div>
+
+            <!-- 2. Driving -->
+            <div
+              class="menu-item"
+              onclick="showGuide('driving')"
+              style="background: #f3e5f5; color: #6a1b9a"
+            >
+              <div class="g-icon">🚗</div>
+              <div class="g-title">Driver License</div>
+            </div>
+
+            <!-- 3. Housing -->
+            <div
+              class="menu-item"
+              onclick="showGuide('housing')"
+              style="background: #e8f5e9; color: #2e7d32"
+            >
+              <div class="g-icon">🏠</div>
+              <div class="g-title">အိမ်ဝယ် / ငှား</div>
+            </div>
+
+            <!-- 4. Car Buying -->
+            <div
+              class="menu-item"
+              onclick="showGuide('car')"
+              style="background: #fff3e0; color: #ef6c00"
+            >
+              <div class="g-icon">🚙</div>
+              <div class="g-title">ကားဝယ်နည်း</div>
+            </div>
+
+            <!-- 5. Jobs -->
+            <div
+              class="menu-item"
+              onclick="showGuide('jobs')"
+              style="background: #e0f7fa; color: #006064"
+            >
+              <div class="g-icon">💼</div>
+              <div class="g-title">အလုပ်ရှာဖွေနည်း</div>
+            </div>
+
+            <!-- 6. USCIS -->
+            <div
+              class="menu-item"
+              onclick="showGuide('uscis')"
+              style="background: #e0f2f1; color: #00695c"
+            >
+              <div class="g-icon">🗽</div>
+              <div class="g-title">Citizenship</div>
+            </div>
+
+            <!-- 7. SNAP -->
+            <div
+              class="menu-item"
+              onclick="showGuide('snap')"
+              style="background: #ffebee; color: #c62828"
+            >
+              <div class="g-icon">🍔</div>
+              <div class="g-title">Foodstamp (SNAP)</div>
+            </div>
+
+            <!-- 8. Rights -->
+            <div
+              class="menu-item"
+              onclick="showGuide('rights')"
+              style="background: #fff8e1; color: #f57f17"
+            >
+              <div class="g-icon">⚖️</div>
+              <div class="g-title">လူ့အခွင့်အရေး</div>
+            </div>
+
+            <!-- 9. Culture -->
+            <div
+              class="menu-item"
+              onclick="showGuide('culture')"
+              style="background: #fce4ec; color: #880e4f"
+            >
+              <div class="g-icon">🎉</div>
+              <div class="g-title">Culture / ဓလေ့</div>
+            </div>
+
+            <!-- 10. English -->
+            <div
+              class="menu-item"
+              onclick="showGuide('english')"
+              style="background: #f0f4c3; color: #827717"
+            >
+              <div class="g-icon">💬</div>
+              <div class="g-title">English လေ့လာရန်</div>
+            </div>
+
+            <!-- 11. Schooling (ခရမ်းရောင်) -->
+            <div
+              class="menu-item"
+              onclick="showGuide('school')"
+              style="background: #ede7f6; color: #4527a0"
+            >
+              <div class="g-icon">🎒</div>
+              <div class="g-title">ကျောင်းအပ်နှံခြင်း<br />(Education)</div>
+            </div>
+
+            <!-- 12. Parenting & Culture (ပန်းရောင်) -->
+            <div
+              class="menu-item"
+              onclick="showGuide('parenting')"
+              style="background: #fce4ec; color: #c2185b"
+            >
+              <div class="g-icon">👨‍👩‍👧‍👦</div>
+              <div class="g-title">မိသားစုနှင့်<br />ယဉ်ကျေးမှု</div>
+            </div>
+
+            <!-- 13. Tax & W2 (အစိမ်းရင့်) -->
+            <div
+              class="menu-item"
+              onclick="showGuide('tax_info')"
+              style="background: #e8f5e9; color: #1b5e20"
+            >
+              <div class="g-icon">💰</div>
+              <div class="g-title">Tax (W2 vs 1099)<br />အခွန်ဗဟုသုတ</div>
+            </div>
+
+            <!-- 14. Insurance (အပြာရင့်) -->
+            <div
+              class="menu-item"
+              onclick="showGuide('insurance_all')"
+              style="background: #e3f2fd; color: #0d47a1"
+            >
+              <div class="g-icon">🛡️</div>
+              <div class="g-title">Insurance<br />(ကား/အိမ်/လူ)</div>
+            </div>
+
+            <!-- 15. Retirement (ရွှေအိုရောင်) -->
+            <div
+              class="menu-item"
+              onclick="showGuide('retirement')"
+              style="background: #fff3e0; color: #e65100"
+            >
+              <div class="g-icon">👴👵</div>
+              <div class="g-title">အိုမင်းရေးရာ<br />(Retirement)</div>
+            </div>
+
+            <!-- 16. Marriage (ပန်းရောင်) -->
+            <div
+              class="menu-item"
+              onclick="showGuide('marriage')"
+              style="background: #fce4ec; color: #880e4f"
+            >
+              <div class="g-icon">💍</div>
+              <div class="g-title">အိမ်ထောင်ရေး<br />သိမှတ်ဖွယ်ရာ</div>
+            </div>
+
+            <!-- 17. Credit Score (ခရမ်းရင့်) - အရေးကြီးဆုံး -->
+            <div
+              class="menu-item"
+              onclick="showGuide('credit')"
+              style="background: #ede7f6; color: #311b92"
+            >
+              <div class="g-icon">💳</div>
+              <div class="g-title">Credit Score<br />တည်ဆောက်နည်း</div>
+            </div>
+
+            <!-- 18. Scams & Safety (လိမ္မော်ရင့်) -->
+            <div
+              class="menu-item"
+              onclick="showGuide('scams')"
+              style="background: #fff3e0; color: #bf360c"
+            >
+              <div class="g-icon">⚠️</div>
+              <div class="g-title">Scams<br />လိမ်နည်းများ</div>
+            </div>
+
+            <!-- 19. Money Transfer (စိမ်းဖန့်) -->
+            <div
+              class="menu-item"
+              onclick="showGuide('money_transfer')"
+              style="background: #e0f2f1; color: #004d40"
+            >
+              <div class="g-icon">💸</div>
+              <div class="g-title">ငွေလွှဲခြင်း<br />(Remittance)</div>
+            </div>
+
+            <!-- 20. Travel & Transport (မိုးပြာရင့်) -->
+            <div
+              class="menu-item"
+              onclick="showGuide('travel_transport')"
+              style="background: #e1f5fe; color: #01579b"
+            >
+              <div class="g-icon">✈️</div>
+              <div class="g-title">ခရီးသွားလာရေး<br />(Flight/Bus)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. NEAR ME TAB -->
+        <div id="tab-near" class="tab-content">
+          <h3>📍 Near Me (နီးစပ်ရာ ရှာဖွေရန်)</h3>
+          <p style="color: #666; font-size: 12px; margin-bottom: 15px">
+            (ဖုန်း Location ဖွင့်ထားရန် လိုအပ်ပါသည်)
+          </p>
+
+          <div class="grid-menu">
+            <!-- 1. Cheap Grocery (အစိမ်း) -->
+            <div
+              class="menu-item"
+              onclick="searchMap('cheap grocery store aldi walmart')"
+              style="background: #e8f5e9; color: #2e7d32"
+            >
+              <div class="g-icon">🥦</div>
+              <div class="g-title">ဈေးသက်သာသော<br />ကုန်စုံဆိုင်များ</div>
+            </div>
+
+            <!-- 2. Asian Market (လိမ္မော်) -->
+            <div
+              class="menu-item"
+              onclick="searchMap('asian supermarket burmese food')"
+              style="background: #fff3e0; color: #ef6c00"
+            >
+              <div class="g-icon">🍜</div>
+              <div class="g-title">အာရှ/မြန်မာ<br />စျေးဆိုင်များ</div>
+            </div>
+
+            <!-- 3. Burmese Restaurant (အနီ) -->
+            <div
+              class="menu-item"
+              onclick="searchMap('burmese restaurant')"
+              style="background: #ffebee; color: #c62828"
+            >
+              <div class="g-icon">🍲</div>
+              <div class="g-title">မြန်မာ<br />ထမင်းဆိုင်များ</div>
+            </div>
+
+            <!-- 4. Gas Station (ခရမ်း) -->
+            <div
+              class="menu-item"
+              onclick="searchMap('cheap gas station')"
+              style="background: #f3e5f5; color: #6a1b9a"
+            >
+              <div class="g-icon">⛽</div>
+              <div class="g-title">ဆီဈေးသက်သာသော<br />ဆိုင်များ</div>
+            </div>
+
+            <!-- 5. Thrift Stores (အညိုနု - NEW) -->
+            <div
+              class="menu-item"
+              onclick="searchMap('thrift store goodwill')"
+              style="background: #efebe9; color: #5d4037"
+            >
+              <div class="g-icon">👕</div>
+              <div class="g-title">အဟောင်းတန်း<br />(Goodwill)</div>
+            </div>
+
+            <!-- 6. Pharmacy (အပြာနု - NEW) -->
+            <div
+              class="menu-item"
+              onclick="searchMap('pharmacy cvs walgreens')"
+              style="background: #e3f2fd; color: #1565c0"
+            >
+              <div class="g-icon">💊</div>
+              <div class="g-title">ဆေးဆိုင်များ<br />(CVS/Walgreens)</div>
+            </div>
+
+            <!-- 7. Laundromat (မိုးပြာ - NEW) -->
+            <div
+              class="menu-item"
+              onclick="searchMap('laundromat')"
+              style="background: #e0f7fa; color: #006064"
+            >
+              <div class="g-icon">ww</div>
+              <div class="g-title">အဝတ်လျှော်<br />ဆိုင်များ</div>
+            </div>
+
+            <!-- 8. Banks/ATM (အစိမ်းရင့် - NEW) -->
+            <div
+              class="menu-item"
+              onclick="searchMap('bank atm')"
+              style="background: #f1f8e9; color: #33691e"
+            >
+              <div class="g-icon">🏦</div>
+              <div class="g-title">ဘဏ်နှင့်<br />ATM များ</div>
+            </div>
+
+            <!-- 9. Post Office (မီးခိုး - NEW) -->
+            <div
+              class="menu-item"
+              onclick="searchMap('post office usps fedex')"
+              style="background: #f5f5f5; color: #424242"
+            >
+              <div class="g-icon">nm</div>
+              <div class="g-title">စာတိုက်<br />(USPS/FedEx)</div>
+            </div>
+
+            <!-- 10. Library (အဝါနု) -->
+            <div
+              class="menu-item"
+              onclick="searchMap('public library')"
+              style="background: #fff8e1; color: #f57f17"
+            >
+              <div class="g-icon">📚</div>
+              <div class="g-title">စာကြည့်တိုက်<br />(Free Wi-Fi)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. CARE TAB -->
+        <div id="tab-care" class="tab-content">
+          <h3>❤️ ကျန်းမာရေးနှင့် လူမှုကူညီရေး</h3>
+
+          <!-- Section 1: Healthcare Info -->
+          <h4 style="margin-top: 15px; color: #555">🏥 ကျန်းမာရေး ဗဟုသုတ</h4>
+          <div class="grid-menu">
+            <!-- 1. Medicaid/Medicare (အနီနု) -->
+            <div
+              class="menu-item"
+              onclick="showGuide('healthcare')"
+              style="background: #ffebee; color: #c62828"
+            >
+              <div class="g-icon">🩺</div>
+              <div class="g-title">Medicaid &<br />Medicare</div>
+            </div>
+
+            <!-- 2. Urgent Care vs ER (အပြာနု) -->
+            <div
+              class="menu-item"
+              onclick="showGuide('urgent')"
+              style="background: #e3f2fd; color: #1565c0"
+            >
+              <div class="g-icon">🚑</div>
+              <div class="g-title">Urgent Care<br />vs ER</div>
+            </div>
+
+            <!-- 3. Find Doctor (စိမ်းပြာ) -->
+            <div
+              class="menu-item"
+              onclick="searchMap('hospital clinic')"
+              style="background: #e0f2f1; color: #00695c"
+            >
+              <div class="g-icon">👨‍⚕️</div>
+              <div class="g-title">ဆေးရုံ/ဆေးခန်း<br />ရှာရန်</div>
+            </div>
+
+            <!-- 4. Pharmacy (ခရမ်းနု) -->
+            <div
+              class="menu-item"
+              onclick="searchMap('pharmacy')"
+              style="background: #f3e5f5; color: #6a1b9a"
+            >
+              <div class="g-icon">💊</div>
+              <div class="g-title">ဆေးဆိုင်များ<br />(Pharmacy)</div>
+            </div>
+          </div>
+
+          <!-- Section 2: Burmese Community -->
+          <h4 style="margin-top: 20px; color: #555">
+            🙏 မြန်မာ့အသိုင်းအဝိုင်း (Near Me)
+          </h4>
+          <div class="grid-menu">
+            <!-- 5. Monasteries (ရွှေရောင်) -->
+            <div
+              class="menu-item"
+              onclick="searchMap('burmese buddhist monastery')"
+              style="background: #fff8e1; color: #f57f17"
+            >
+              <div class="g-icon">🛕</div>
+              <div class="g-title">မြန်မာ<br />ဘုန်းကြီးကျောင်း</div>
+            </div>
+
+            <!-- 6. Churches (မိုးပြာ) -->
+            <div
+              class="menu-item"
+              onclick="searchMap('burmese church')"
+              style="background: #e1f5fe; color: #0277bd"
+            >
+              <div class="g-icon">⛪</div>
+              <div class="g-title">မြန်မာ<br />ခရစ်ယာန်ကျောင်း</div>
+            </div>
+
+            <!-- 7. Social Aid (အစိမ်းနု) -->
+            <div
+              class="menu-item"
+              onclick="searchMap('burmese community center')"
+              style="background: #e8f5e9; color: #2e7d32"
+            >
+              <div class="g-icon">🤝</div>
+              <div class="g-title">လူမှုကူညီရေး<br />အသင်းများ</div>
+            </div>
+          </div>
+
+          <!-- Section 3: Safety & Services -->
+          <h4 style="margin-top: 20px; color: #555">
+            🛡️ လုံခြုံရေးနှင့် ဝန်ဆောင်မှု
+          </h4>
+          <div class="grid-menu">
+            <!-- 8. Safety & Rights (မီးခိုး) -->
+            <div
+              class="menu-item"
+              onclick="showGuide('safety')"
+              style="background: #f5f5f5; color: #424242"
+            >
+              <div class="g-icon">👮‍♂️</div>
+              <div class="g-title">ရဲ/အမျိုးသမီး/<br />တိရစ္ဆာန်ဌာန</div>
+            </div>
+
+            <!-- 9. Emergency 911 (အနီရဲရဲ) -->
+            <div
+              class="menu-item"
+              onclick="window.location.href='tel:911'"
+              style="
+                background: #ffcdd2;
+                color: #b71c1c;
+                border: 2px solid #b71c1c;
+              "
+            >
+              <div class="g-icon">🆘</div>
+              <div class="g-title">Emergency<br />Call 911</div>
+            </div>
+          </div>
+
+          <!-- Extra Spacer -->
+          <div style="height: 100px"></div>
+        </div>
+      </div>
+
+      <!-- Bottom Nav -->
+      <nav class="bottom-nav">
+        <div class="nav-item active" onclick="switchTab('wallet')">
+          <i class="fas fa-wallet"></i><span>Wallet</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('guides')">
+          <i class="fas fa-book"></i><span>Guides</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('near')">
+          <i class="fas fa-map-marker-alt"></i><span>Near Me</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('care')">
+          <i class="fas fa-heart"></i><span>Care</span>
+        </div>
+      </nav>
+    </div>
+
+    <!-- MODALS -->
+
+    <!-- Transaction Modal (Income/Expense) -->
+    <div id="transModal" class="modal">
+      <div class="modal-box">
+        <h3 id="transTitle">Add Transaction</h3>
+        <!-- (New) Edit အတွက် ID သိမ်းမယ့်နေရာ -->
+        <input type="hidden" id="editTransId" />
+        <input type="hidden" id="transType" />
+        <input
+          type="number"
+          id="transAmount"
+          placeholder="Amount ($)"
+          step="0.01"
+        />
+        <input
+          type="text"
+          id="transNote"
+          placeholder="Note (e.g. Salary, Walmart)"
+        />
+        <input type="date" id="transDate" />
+        <div class="row">
+          <button onclick="closeModal('transModal')">Cancel</button>
+          <button onclick="saveTransaction()" class="primary">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subscription Modal -->
+    <div id="subModal" class="modal">
+      <div class="modal-box">
+        <h3 id="subTitle">Add Subscription</h3>
+
+        <!-- (New) Edit လုပ်ဖို့ ID သိမ်းမယ့်နေရာ -->
+        <input type="hidden" id="editSubId" />
+
+        <input type="text" id="subName" placeholder="Name (e.g. Netflix)" />
+        <input type="number" id="subCost" placeholder="Monthly Cost ($)" />
+        <input type="number" id="subDay" placeholder="Due Day (1-31)" />
+        <div class="row">
+          <button onclick="closeModal('subModal')">Cancel</button>
+          <button onclick="saveSub()" class="primary">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Guide Modal -->
+    <div id="guideModal" class="modal">
+      <div class="modal-box full-screen">
+        <div class="modal-header">
+          <h3 id="guideTitle">Title</h3>
+          <button onclick="closeModal('guideModal')">&times;</button>
+        </div>
+        <div id="guideContent" class="guide-body"></div>
+      </div>
+    </div>
+
+    <!-- Install Modal -->
+    <div id="installModal" class="modal">
+      <div class="modal-box">
+        <h3 style="color: #2563eb">📲 Install App</h3>
+        <div style="text-align: left; margin-top: 15px; font-size: 14px">
+          <p><b>Android:</b> Menu > "Install App"</p>
+          <p><b>iOS:</b> Share > "Add to Home Screen"</p>
+        </div>
+        <button
+          onclick="document.getElementById('installModal').style.display='none'"
+          class="primary"
+          style="margin-top: 20px; width: 100%"
+        >
+          OK
+        </button>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
