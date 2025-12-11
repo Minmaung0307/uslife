@@ -760,3 +760,33 @@ button.primary {
     border-top: 1px solid #e5e7eb;
     width: 100%;
 }
+
+/* Buy Coffee Button Style */
+.coffee-btn {
+  background: linear-gradient(135deg, #f59e0b, #d97706); /* ရွှေအိုရောင် */
+  color: white;
+  padding: 6px 14px;
+  border-radius: 50px; /* လုံးဝန်းသောပုံစံ */
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3); /* အရိပ်လေးထည့်မယ် */
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.coffee-btn:active {
+  transform: scale(0.95); /* နှိပ်လိုက်ရင် ရှုံ့သွားမယ့် effect */
+}
+
+.coffee-btn span {
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* ဖုန်း Screen အသေးတွေမှာ စာမဆံ့ရင် "Buy Coffee" စာကို ဖျောက်ပြီး ☕ ပဲပြမယ် */
+@media (max-width: 360px) {
+  .coffee-text { display: none; }
+  .coffee-btn { padding: 8px; }
+}

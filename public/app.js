@@ -83,6 +83,21 @@ auth.onAuthStateChanged((user) => {
   }
 });
 
+
+// Payment System ကို Setup လုပ်ခြင်း
+
+setupPaymentSystem({
+    appName: "US Life",
+    type: "donation", // <--- ဒီနေရာမှာ donation လို့ သတ်မှတ်လိုက်တာနဲ့ Coffee ပုံစံဖြစ်သွားမယ်
+    
+    items: {
+        'Coffee': { price: 3, link: 'https://buy.stripe.com/test_coffee' },
+        'Burger': { price: 5, link: 'https://buy.stripe.com/test_burger' },
+        'Big Meal': { price: 10, link: 'https://buy.stripe.com/test_meal' }
+    },
+    
+    paypalLink: "https://paypal.me/minmaung"
+});
 // --- AUTH STATE LISTENER (SIMPLIFIED) ---
 // auth.onAuthStateChanged((user) => {
 //   const loader = document.getElementById("loadingOverlay");
@@ -105,94 +120,156 @@ auth.onAuthStateChanged((user) => {
 // });
 
 // Subscription စစ်ဆေးခြင်း
+// function checkSubscriptionStatus(uid) {
+//     db.collection("users").doc(uid).onSnapshot((doc) => {
+//         const badge = document.getElementById("subBadge");
+        
+//         if (doc.exists) {
+//             const data = doc.data();
+//             const now = Date.now();
+            
+//             // သက်တမ်းစစ်ခြင်း
+//             if (data.plan === 'lifetime' || (data.expiry && data.expiry > now)) {
+//                 // Premium User
+//                 userSubscription = { active: true, plan: data.plan };
+//                 if(badge) {
+//                     badge.innerText = "Premium 👑";
+//                     badge.className = "sub-badge premium";
+//                 }
+//                 loadData(); // Data ပေးပေါ်မယ်
+//             } else {
+//                 // Expired User
+//                 userSubscription = { active: false, plan: 'expired' };
+//                 if(badge) {
+//                     badge.innerText = "Expired ⚠️";
+//                     badge.className = "sub-badge expired";
+//                 }
+//                 showLockedUI(); // Data ပိတ်မယ်
+//             }
+//         } else {
+//             // New User (Database ထဲမှာ မရှိသေးသူ)
+//             userSubscription = { active: false, plan: 'free' };
+//             if(badge) {
+//                 badge.innerText = "Free User";
+//                 badge.className = "sub-badge free";
+//             }
+            
+//             // Database ထဲမှာ User အသစ်စာရင်းသွင်းမယ်
+//             db.collection("users").doc(uid).set({
+//                 email: currentUser.email,
+//                 plan: 'free',
+//                 joined: Date.now()
+//             }, { merge: true }); // merge: true က ရှိပြီးသားဆို မဖျက်ပစ်ဘူး
+            
+//             showLockedUI();
+//         }
+//     }, (error) => {
+//         console.error("Database Error:", error);
+//         // Rules မှားနေရင် ဒီ error တက်မယ်
+//         if(error.code === 'permission-denied') {
+//              alert("Database Permission Error: Please update Firestore Rules!");
+//         }
+//     });
+// }
+
+// --- SUBSCRIPTION CHECK (UPDATED FOR FREE APP) ---
 function checkSubscriptionStatus(uid) {
     db.collection("users").doc(uid).onSnapshot((doc) => {
         const badge = document.getElementById("subBadge");
         
+        // Default အားဖြင့် လူတိုင်းကို Active ပေးလုပ်မယ် (Lock မချတော့ဘူး)
+        userSubscription = { active: true, plan: 'free' };
+
         if (doc.exists) {
             const data = doc.data();
             const now = Date.now();
             
-            // သက်တမ်းစစ်ခြင်း
+            // Donation သမားလား/Premium သမားလား စစ်မယ် (Badge ပြောင်းဖို့သက်သက်ပါ)
             if (data.plan === 'lifetime' || (data.expiry && data.expiry > now)) {
-                // Premium User
-                userSubscription = { active: true, plan: data.plan };
+                userSubscription.plan = data.plan;
                 if(badge) {
-                    badge.innerText = "Premium 👑";
+                    badge.innerText = "Supporter 👑"; // Premium အစား Supporter လို့ ပြောင်းလိုက်ရင် ပိုလှပါတယ်
                     badge.className = "sub-badge premium";
                 }
-                loadData(); // Data ပေးပေါ်မယ်
             } else {
-                // Expired User
-                userSubscription = { active: false, plan: 'expired' };
+                // Free User
                 if(badge) {
-                    badge.innerText = "Expired ⚠️";
-                    badge.className = "sub-badge expired";
+                    badge.innerText = "Buy Coffee ☕";
+                    badge.className = "sub-badge free";
                 }
-                showLockedUI(); // Data ပိတ်မယ်
             }
         } else {
-            // New User (Database ထဲမှာ မရှိသေးသူ)
-            userSubscription = { active: false, plan: 'free' };
+            // User အသစ် (Database ထဲမရှိသေးသူ)
             if(badge) {
-                badge.innerText = "Free User";
+                badge.innerText = "Buy Coffee ☕";
                 badge.className = "sub-badge free";
             }
             
-            // Database ထဲမှာ User အသစ်စာရင်းသွင်းမယ်
+            // Database မှာ မှတ်တမ်းယူမယ်
             db.collection("users").doc(uid).set({
                 email: currentUser.email,
                 plan: 'free',
                 joined: Date.now()
-            }, { merge: true }); // merge: true က ရှိပြီးသားဆို မဖျက်ပစ်ဘူး
-            
-            showLockedUI();
+            }, { merge: true });
         }
+
+        // အရေးကြီးဆုံးအချက်: ဘယ်သူဖြစ်ဖြစ် Data ကို ဆွဲပြမယ်
+        loadData();
+
     }, (error) => {
         console.error("Database Error:", error);
-        // Rules မှားနေရင် ဒီ error တက်မယ်
-        if(error.code === 'permission-denied') {
-             alert("Database Permission Error: Please update Firestore Rules!");
-        }
     });
 }
 
+// function checkAccessAndRun(callback) {
+//     if (userSubscription && userSubscription.active) {
+//         callback();
+//     } else {
+//         openPaywall();
+//     }
+// }
+// Lock မစစ်တော့ဘဲ ခလုတ်နှိပ်ရင် တန်းအလုပ်လုပ်ခိုင်းမယ်
 function checkAccessAndRun(callback) {
-    if (userSubscription && userSubscription.active) {
-        callback();
-    } else {
-        openPaywall();
-    }
+    callback(); // တန်းခေါ်လိုက်မယ်
 }
 
-function openPaywall() {
-    const modal = document.getElementById("paywallModal");
-    if(modal) modal.style.display = "flex";
-}
+// function openPaywall() {
+//     const modal = document.getElementById("paywallModal");
+//     if(modal) modal.style.display = "flex";
+// }
 
-function showLockedUI() {
-    const totalBal = document.getElementById("totalBalance");
-    const transList = document.getElementById("transList");
+// function showLockedUI() {
+//     const totalBal = document.getElementById("totalBalance");
+//     const transList = document.getElementById("transList");
     
-    if(totalBal) totalBal.innerText = "🔒 Locked";
-    if(transList) {
-        transList.innerHTML = `
-        <div style="text-align:center; padding:30px; color:#888;">
-            <i class="fas fa-lock" style="font-size:30px; margin-bottom:15px;"></i><br>
-            Please buy Premium to view data.
-        </div>`;
-    }
-}
+//     if(totalBal) totalBal.innerText = "🔒 Locked";
+//     if(transList) {
+//         transList.innerHTML = `
+//         <div style="text-align:center; padding:30px; color:#888;">
+//             <i class="fas fa-lock" style="font-size:30px; margin-bottom:15px;"></i><br>
+//             Please buy Premium to view data.
+//         </div>`;
+//     }
+// }
 
 // --- TABS ---
-function switchTab(tabName) {
-    if (tabName === 'guides' || tabName === 'wallet') {
-        if (!userSubscription || !userSubscription.active) {
-            openPaywall();
-            return; 
-        }
-    }
+// function switchTab(tabName) {
+//     if (tabName === 'guides' || tabName === 'wallet') {
+//         if (!userSubscription || !userSubscription.active) {
+//             openPaywall();
+//             return; 
+//         }
+//     }
     
+//     document.querySelectorAll(".tab-content").forEach((el) => el.classList.remove("active"));
+//     document.getElementById(`tab-${tabName}`).classList.add("active");
+//     document.querySelectorAll(".nav-item").forEach((el) => el.classList.remove("active"));
+//     event.currentTarget.classList.add("active");
+// }
+// Tab ပြောင်းရင်လည်း Lock မစစ်တော့ဘူး
+function switchTab(tabName) {
+    // if (!userSubscription...) ဆိုတဲ့ အပိုင်းကို ဖျက်လိုက်ပါပြီ
+
     document.querySelectorAll(".tab-content").forEach((el) => el.classList.remove("active"));
     document.getElementById(`tab-${tabName}`).classList.add("active");
     document.querySelectorAll(".nav-item").forEach((el) => el.classList.remove("active"));

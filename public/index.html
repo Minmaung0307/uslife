@@ -49,7 +49,10 @@
       src="/__/firebase/10.13.2/firebase-firestore-compat.js"
     ></script>
 
-    <script defer src="/__/firebase/10.13.2/firebase-remote-config-compat.js"></script>
+    <script
+      defer
+      src="/__/firebase/10.13.2/firebase-remote-config-compat.js"
+    ></script>
     <script defer src="/__/firebase/init.js"></script>
 
     <script>
@@ -128,10 +131,10 @@
         <div class="logo">US Life 🇺🇸</div>
 
         <div style="display: flex; gap: 15px; align-items: center">
-
-          <!-- Subscription Status Badge -->
-          <div id="subBadge" class="sub-badge free" onclick="openPaywall()">
-            Free
+          <!-- ✨ Buy Coffee Button (ဒီဇိုင်းလှလှလေး) ✨ -->
+          <div onclick="openPaymentUI()" class="coffee-btn">
+            <span style="font-size: 23px">☕</span>
+            <span class="coffee-text">Buy Coffee</span>
           </div>
 
           <!-- INSTALL ICON & TOOLTIP -->
@@ -238,34 +241,34 @@
           <!-- 3. Action Buttons (Circle Icons) -->
           <div class="quick-actions">
             <!-- Income Button -->
-            <div 
-  onclick="checkAccessAndRun(() => openTransModal('income'))"
-  class="tooltip-btn"
-  data-tooltip="လစာ၊ ဘောနပ်စ်၊ အပိုဝင်ငွေများ ထည့်ရန်"
->
-  <div class="circle-btn inc"><i class="fas fa-plus"></i></div>
-  <span>Income</span>
-</div>
+            <div
+              onclick="checkAccessAndRun(() => openTransModal('income'))"
+              class="tooltip-btn"
+              data-tooltip="လစာ၊ ဘောနပ်စ်၊ အပိုဝင်ငွေများ ထည့်ရန်"
+            >
+              <div class="circle-btn inc"><i class="fas fa-plus"></i></div>
+              <span>Income</span>
+            </div>
 
             <!-- Expense Button -->
-            <div 
-  onclick="checkAccessAndRun(() => openTransModal('expense'))"
-  class="tooltip-btn"
-  data-tooltip="နေ့စဉ် အသုံးစရိတ်များ..."
->
-  <div class="circle-btn exp"><i class="fas fa-minus"></i></div>
-  <span>Expense</span>
-</div>
+            <div
+              onclick="checkAccessAndRun(() => openTransModal('expense'))"
+              class="tooltip-btn"
+              data-tooltip="နေ့စဉ် အသုံးစရိတ်များ..."
+            >
+              <div class="circle-btn exp"><i class="fas fa-minus"></i></div>
+              <span>Expense</span>
+            </div>
 
             <!-- Subscription Button -->
-            <div 
-  onclick="checkAccessAndRun(() => openSubModal())"
-  class="tooltip-btn"
-  data-tooltip="လစဉ်ပေး စရိတ်များ..."
->
-  <div class="circle-btn sub"><i class="fas fa-sync"></i></div>
-  <span>Sub</span>
-</div>
+            <div
+              onclick="checkAccessAndRun(() => openSubModal())"
+              class="tooltip-btn"
+              data-tooltip="လစဉ်ပေး စရိတ်များ..."
+            >
+              <div class="circle-btn sub"><i class="fas fa-sync"></i></div>
+              <span>Sub</span>
+            </div>
           </div>
 
           <!-- 4. Subscriptions (Mini Cards) -->
@@ -879,44 +882,7 @@
       </div>
     </div>
 
-    <!-- PAYWALL MODAL (Body အောက်ဆုံးနားမှာ ထည့်ပါ) -->
-    <div id="paywallModal" class="modal" style="z-index: 9999;">
-      <div class="modal-box">
-        <h2 style="color: #2563eb; margin-bottom: 5px;">Unlock Premium 🔓</h2>
-        <p style="color: #666; font-size: 13px; margin-bottom: 20px;">
-          Premium ဝယ်ယူထားသူများသာ အသုံးပြုခွင့်ရှိပါသည်။
-        </p>
-
-        <!-- Pricing Options -->
-        <div class="pricing-option" onclick="selectPlan('1 Month', 2)">
-          <span>1 Month</span>
-          <b>$2</b>
-        </div>
-        <div class="pricing-option" onclick="selectPlan('6 Months', 10)">
-          <span>6 Months</span>
-          <b>$10</b>
-        </div>
-        <div class="pricing-option popular" onclick="selectPlan('1 Year', 20)">
-          <span>1 Year</span>
-          <b style="color: #2563eb">$20</b>
-          <div class="badge">Popular</div>
-        </div>
-        <div class="pricing-option" onclick="selectPlan('Lifetime', 200)">
-          <span>Lifetime</span>
-          <b>$200</b>
-        </div>
-
-        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
-        
-        <!-- Admin Contact Button -->
-        <a href="mailto:minmaung0307@gmail.com?subject=US Life Premium Purchase" class="contact-btn">
-          <i class="fas fa-envelope"></i> Contact Admin to Buy
-        </a>
-
-        <button onclick="closeModal('paywallModal')" style="margin-top: 15px; background: none; color: #888; border: none;">Close</button>
-      </div>
-    </div>
-
+    <script defer src="payment.js"></script>
     <script defer src="app.js"></script>
   </body>
 </html>
