@@ -6,12 +6,12 @@ const firebaseConfig = {
   storageBucket: "uslife-m.firebasestorage.app",
   messagingSenderId: "248045870142",
   appId: "1:248045870142:web:f307468262b990f4dd456f",
-  measurementId: "G-DMVXE48QTQ"
+  measurementId: "G-DMVXE48QTQ",
 };
 
 // Firebase က မပွင့်သေးဘူးဆိုမှ ဖွင့်မယ် (ပွင့်ပြီးသားဆို ကျော်သွားမယ်)
 if (!firebase.apps.length) {
-   firebase.initializeApp(firebaseConfig);
+  firebase.initializeApp(firebaseConfig);
 }
 
 // *** Offline Persistence Enable (Must be before creating db/auth instances if possible, or right after) ***
@@ -35,7 +35,7 @@ const auth = firebase.auth();
 const remoteConfig = firebase.remoteConfig();
 remoteConfig.settings = {
   minimumFetchIntervalMillis: 3600000,
-  fetchTimeoutMillis: 10000 // 10 စက္ကန့်ထက် ပိုမစောင့်ခိုင်းဘူး
+  fetchTimeoutMillis: 10000, // 10 စက္ကန့်ထက် ပိုမစောင့်ခိုင်းဘူး
 };
 
 let currentUser = null;
@@ -46,8 +46,8 @@ let currentMonth = new Date().toISOString().slice(0, 7);
 function signIn() {
   const provider = new firebase.auth.GoogleAuthProvider();
   // ဒီလိုင်းက အကောင့်ရွေးခိုင်းတဲ့ function ပါ
-  provider.setCustomParameters({ prompt: 'select_account' });
-  
+  provider.setCustomParameters({ prompt: "select_account" });
+
   auth.signInWithPopup(provider);
 }
 function logout() {
@@ -58,23 +58,23 @@ function logout() {
 // --- AUTH STATE LISTENER (WHITELIST PROTECTION & LOADING FIX) ---
 auth.onAuthStateChanged((user) => {
   const loader = document.getElementById("loadingOverlay");
-  if(loader) loader.style.display = "none";
+  if (loader) loader.style.display = "none";
 
   if (user) {
     // Login ဝင်တာ အောင်မြင်သည်
     currentUser = user;
-    
+
     // UI ပြောင်းမယ်
     document.getElementById("authScreen").classList.remove("active");
     document.getElementById("appScreen").classList.add("active");
-    
+
     // Header ပုံပြောင်းမယ်
     const photoEl = document.getElementById("headerUserPhoto");
-    if(photoEl) photoEl.src = user.photoURL;
+    if (photoEl) photoEl.src = user.photoURL;
 
     // Subscription စစ်ဆေးမယ်
     checkSubscriptionStatus(user.uid);
-
+    checkAnnouncement();
   } else {
     // Login မဝင်ရသေးပါ
     document.getElementById("authScreen").classList.add("active");
@@ -83,21 +83,21 @@ auth.onAuthStateChanged((user) => {
   }
 });
 
-
 // Payment System ကို Setup လုပ်ခြင်း
 
-setupPaymentSystem({
-    appName: "US Life",
-    type: "donation", // <--- ဒီနေရာမှာ donation လို့ သတ်မှတ်လိုက်တာနဲ့ Coffee ပုံစံဖြစ်သွားမယ်
-    
-    items: {
-        'Coffee': { price: 5, link: 'https://buy.stripe.com/test_coffee' },
-        'Burger': { price: 8, link: 'https://buy.stripe.com/test_burger' },
-        'Big Meal': { price: 15, link: 'https://buy.stripe.com/test_meal' }
-    },
-    
-    paypalLink: "https://paypal.me/minmaung"
-});
+// setupPaymentSystem({
+//     appName: "US Life Guide",
+//     type: "donation",
+
+//     items: {
+//         // Donation Links (ဒီနာမည်တွေက payment.js နဲ့ အတိအကျ တူရပါမယ်)
+//         'Coffee': { price: 5, link: 'https://buy.stripe.com/test_6oUbJ17J2cu15GNeg4aIM00'},
+//         'Burger': { price: 8, link: 'https://buy.stripe.com/test_8x27sL3sMbpX8SZ9ZOaIM01'},
+//         'Big Meal': { price: 15, link: 'https://buy.stripe.com/test_cNifZh6EYfGdc5b4FuaIM02'}
+//     },
+
+//     paypalLink: "https://paypal.me/minmaung"
+// });
 // --- AUTH STATE LISTENER (SIMPLIFIED) ---
 // auth.onAuthStateChanged((user) => {
 //   const loader = document.getElementById("loadingOverlay");
@@ -108,7 +108,7 @@ setupPaymentSystem({
 //     currentUser = user;
 //     document.getElementById("authScreen").classList.remove("active");
 //     document.getElementById("appScreen").classList.add("active");
-    
+
 //     // ကျန်တဲ့ data load တာတွေ ဆက်လုပ်မယ်...
 //     loadData();
 //     filterDataByMonth();
@@ -120,160 +120,159 @@ setupPaymentSystem({
 // });
 
 // Subscription စစ်ဆေးခြင်း
-// function checkSubscriptionStatus(uid) {
-//     db.collection("users").doc(uid).onSnapshot((doc) => {
-//         const badge = document.getElementById("subBadge");
-        
-//         if (doc.exists) {
-//             const data = doc.data();
-//             const now = Date.now();
-            
-//             // သက်တမ်းစစ်ခြင်း
-//             if (data.plan === 'lifetime' || (data.expiry && data.expiry > now)) {
-//                 // Premium User
-//                 userSubscription = { active: true, plan: data.plan };
-//                 if(badge) {
-//                     badge.innerText = "Premium 👑";
-//                     badge.className = "sub-badge premium";
-//                 }
-//                 loadData(); // Data ပေးပေါ်မယ်
-//             } else {
-//                 // Expired User
-//                 userSubscription = { active: false, plan: 'expired' };
-//                 if(badge) {
-//                     badge.innerText = "Expired ⚠️";
-//                     badge.className = "sub-badge expired";
-//                 }
-//                 showLockedUI(); // Data ပိတ်မယ်
-//             }
-//         } else {
-//             // New User (Database ထဲမှာ မရှိသေးသူ)
-//             userSubscription = { active: false, plan: 'free' };
-//             if(badge) {
-//                 badge.innerText = "Free User";
-//                 badge.className = "sub-badge free";
-//             }
-            
-//             // Database ထဲမှာ User အသစ်စာရင်းသွင်းမယ်
-//             db.collection("users").doc(uid).set({
-//                 email: currentUser.email,
-//                 plan: 'free',
-//                 joined: Date.now()
-//             }, { merge: true }); // merge: true က ရှိပြီးသားဆို မဖျက်ပစ်ဘူး
-            
-//             showLockedUI();
-//         }
-//     }, (error) => {
-//         console.error("Database Error:", error);
-//         // Rules မှားနေရင် ဒီ error တက်မယ်
-//         if(error.code === 'permission-denied') {
-//              alert("Database Permission Error: Please update Firestore Rules!");
-//         }
-//     });
-// }
-
-// --- SUBSCRIPTION CHECK (UPDATED FOR FREE APP) ---
 function checkSubscriptionStatus(uid) {
-    db.collection("users").doc(uid).onSnapshot((doc) => {
+  // Database ထဲက users collection ကို စောင့်ကြည့်မယ်
+  db.collection("users")
+    .doc(uid)
+    .onSnapshot(
+      (doc) => {
         const badge = document.getElementById("subBadge");
-        
+
         // Default အားဖြင့် လူတိုင်းကို Active ပေးလုပ်မယ် (Lock မချတော့ဘူး)
-        userSubscription = { active: true, plan: 'free' };
+        userSubscription = { active: true, plan: "free" };
 
         if (doc.exists) {
-            const data = doc.data();
-            const now = Date.now();
-            
-            // Donation သမားလား/Premium သမားလား စစ်မယ် (Badge ပြောင်းဖို့သက်သက်ပါ)
-            if (data.plan === 'lifetime' || (data.expiry && data.expiry > now)) {
-                userSubscription.plan = data.plan;
-                if(badge) {
-                    badge.innerText = "Supporter 👑"; // Premium အစား Supporter လို့ ပြောင်းလိုက်ရင် ပိုလှပါတယ်
-                    badge.className = "sub-badge premium";
-                }
-            } else {
-                // Free User
-                if(badge) {
-                    badge.innerText = "Buy Coffee ☕";
-                    badge.className = "sub-badge free";
-                }
+          const data = doc.data();
+          const now = Date.now();
+
+          // Donation သမားလား/Premium သမားလား စစ်မယ် (Badge ပြောင်းဖို့သက်သက်ပါ)
+          if (data.plan === "lifetime" || (data.expiry && data.expiry > now)) {
+            userSubscription.plan = data.plan;
+            if (badge) {
+              badge.innerText = "Supporter 👑";
+              badge.className = "sub-badge premium";
             }
+          } else {
+            // Free User
+            if (badge) {
+              badge.innerText = "Buy Coffee ☕";
+              badge.className = "sub-badge free";
+            }
+          }
         } else {
-            // User အသစ် (Database ထဲမရှိသေးသူ)
-            if(badge) {
-                badge.innerText = "Buy Coffee ☕";
-                badge.className = "sub-badge free";
-            }
-            
-            // Database မှာ မှတ်တမ်းယူမယ်
-            db.collection("users").doc(uid).set({
-                email: currentUser.email,
-                plan: 'free',
-                joined: Date.now()
-            }, { merge: true });
+          // User အသစ် (Database ထဲမရှိသေးသူ)
+          if (badge) {
+            badge.innerText = "Buy Coffee ☕";
+            badge.className = "sub-badge free";
+          }
+
+          // Database မှာ မှတ်တမ်းယူမယ်
+          db.collection("users").doc(uid).set(
+            {
+              email: currentUser.email,
+              plan: "free",
+              joined: Date.now(),
+            },
+            { merge: true }
+          );
         }
 
         // အရေးကြီးဆုံးအချက်: ဘယ်သူဖြစ်ဖြစ် Data ကို ဆွဲပြမယ်
         loadData();
-
-    }, (error) => {
+      },
+      (error) => {
         console.error("Database Error:", error);
+      }
+    );
+}
+
+// --- ANNOUNCEMENT BANNER CHECK Starts ---
+function checkAnnouncement() {
+  // Database ထဲက 'config' collection, 'news' document ကို ဖတ်မယ်
+  // (Database မှာ ဒီ Collection ကို Admin က ဆောက်ပေးရပါမယ်)
+  db.collection("config")
+    .doc("news")
+    .onSnapshot((doc) => {
+      const banner = document.getElementById("announcementBanner");
+
+      if (doc.exists && doc.data().active) {
+        // Active ဖြစ်မှ ပြမယ်
+        const data = doc.data();
+        document.getElementById("announceText").textContent = data.message;
+        banner.style.display = "flex";
+
+        // အရောင်ပြောင်းချင်ရင် (Optional)
+        if (data.type === "danger") {
+          banner.style.background = "linear-gradient(90deg, #ef4444, #f87171)";
+        }
+      } else {
+        banner.style.display = "none";
+      }
     });
 }
 
-// function checkAccessAndRun(callback) {
-//     if (userSubscription && userSubscription.active) {
-//         callback();
-//     } else {
-//         openPaywall();
-//     }
-// }
-// Lock မစစ်တော့ဘဲ ခလုတ်နှိပ်ရင် တန်းအလုပ်လုပ်ခိုင်းမယ်
-function checkAccessAndRun(callback) {
-    callback(); // တန်းခေါ်လိုက်မယ်
+function closeAnnouncement() {
+  document.getElementById("announcementBanner").style.display = "none";
 }
 
-// function openPaywall() {
-//     const modal = document.getElementById("paywallModal");
-//     if(modal) modal.style.display = "flex";
-// }
+// --- ANNOUNCEMENT BANNER CHECK Ends ---
 
-// function showLockedUI() {
-//     const totalBal = document.getElementById("totalBalance");
-//     const transList = document.getElementById("transList");
-    
-//     if(totalBal) totalBal.innerText = "🔒 Locked";
-//     if(transList) {
-//         transList.innerHTML = `
-//         <div style="text-align:center; padding:30px; color:#888;">
-//             <i class="fas fa-lock" style="font-size:30px; margin-bottom:15px;"></i><br>
-//             Please buy Premium to view data.
-//         </div>`;
-//     }
-// }
+// --- SUBSCRIPTION CHECK (UPDATED FOR FREE APP) ---
+// function checkSubscriptionStatus(uid) {
+//     db.collection("users").doc(uid).onSnapshot((doc) => {
+//         const badge = document.getElementById("subBadge");
 
-// --- TABS ---
-// function switchTab(tabName) {
-//     if (tabName === 'guides' || tabName === 'wallet') {
-//         if (!userSubscription || !userSubscription.active) {
-//             openPaywall();
-//             return; 
+//         // Default အားဖြင့် လူတိုင်းကို Active ပေးလုပ်မယ် (Lock မချတော့ဘူး)
+//         userSubscription = { active: true, plan: 'free' };
+
+//         if (doc.exists) {
+//             const data = doc.data();
+//             const now = Date.now();
+
+//             // Donation သမားလား/Premium သမားလား စစ်မယ် (Badge ပြောင်းဖို့သက်သက်ပါ)
+//             if (data.plan === 'lifetime' || (data.expiry && data.expiry > now)) {
+//                 userSubscription.plan = data.plan;
+//                 if(badge) {
+//                     badge.innerText = "Supporter 👑"; // Premium အစား Supporter လို့ ပြောင်းလိုက်ရင် ပိုလှပါတယ်
+//                     badge.className = "sub-badge premium";
+//                 }
+//             } else {
+//                 // Free User
+//                 if(badge) {
+//                     badge.innerText = "Buy Coffee ☕";
+//                     badge.className = "sub-badge free";
+//                 }
+//             }
+//         } else {
+//             // User အသစ် (Database ထဲမရှိသေးသူ)
+//             if(badge) {
+//                 badge.innerText = "Buy Coffee ☕";
+//                 badge.className = "sub-badge free";
+//             }
+
+//             // Database မှာ မှတ်တမ်းယူမယ်
+//             db.collection("users").doc(uid).set({
+//                 email: currentUser.email,
+//                 plan: 'free',
+//                 joined: Date.now()
+//             }, { merge: true });
 //         }
-//     }
-    
-//     document.querySelectorAll(".tab-content").forEach((el) => el.classList.remove("active"));
-//     document.getElementById(`tab-${tabName}`).classList.add("active");
-//     document.querySelectorAll(".nav-item").forEach((el) => el.classList.remove("active"));
-//     event.currentTarget.classList.add("active");
+
+//         // အရေးကြီးဆုံးအချက်: ဘယ်သူဖြစ်ဖြစ် Data ကို ဆွဲပြမယ်
+//         loadData();
+
+//     }, (error) => {
+//         console.error("Database Error:", error);
+//     });
 // }
+
+// Lock မစစ်တော့ဘဲ ခလုတ်နှိပ်ရင် တန်းအလုပ်လုပ်ခိုင်းမယ်
+function checkAccessAndRun(callback) {
+  callback(); // တန်းခေါ်လိုက်မယ်
+}
+
 // Tab ပြောင်းရင်လည်း Lock မစစ်တော့ဘူး
 function switchTab(tabName) {
-    // if (!userSubscription...) ဆိုတဲ့ အပိုင်းကို ဖျက်လိုက်ပါပြီ
+  // if (!userSubscription...) ဆိုတဲ့ အပိုင်းကို ဖျက်လိုက်ပါပြီ
 
-    document.querySelectorAll(".tab-content").forEach((el) => el.classList.remove("active"));
-    document.getElementById(`tab-${tabName}`).classList.add("active");
-    document.querySelectorAll(".nav-item").forEach((el) => el.classList.remove("active"));
-    event.currentTarget.classList.add("active");
+  document
+    .querySelectorAll(".tab-content")
+    .forEach((el) => el.classList.remove("active"));
+  document.getElementById(`tab-${tabName}`).classList.add("active");
+  document
+    .querySelectorAll(".nav-item")
+    .forEach((el) => el.classList.remove("active"));
+  event.currentTarget.classList.add("active");
 }
 
 // --- NEW HELPER: GET ICON ---
@@ -685,7 +684,7 @@ function deleteItem(col, id) {
 }
 
 // CSS for Paywall Options
-const style = document.createElement('style');
+const style = document.createElement("style");
 style.innerHTML = `
     .sub-badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; cursor: pointer; }
     .sub-badge.free { background: #eee; color: #555; }
@@ -711,22 +710,22 @@ document.head.appendChild(style);
 
 // --- GUIDES GRID GENERATOR (LOCKED) ---
 function loadGuidesGrid() {
-    const guides = [
-        {id: 'id', icon: '🪪', title: 'ID / SSN'},
-        {id: 'driving', icon: '🚗', title: 'Driving License'},
-        // ... Add other guides keys
-    ];
-    
-    const grid = document.getElementById("guidesGrid");
-    grid.innerHTML = "";
-    
-    guides.forEach(g => {
-        const div = document.createElement("div");
-        div.className = "menu-item";
-        div.onclick = () => showGuide(g.id); // Check logic handles access
-        div.innerHTML = `<div class="g-icon">${g.icon}</div><div class="g-title">${g.title}</div>`;
-        grid.appendChild(div);
-    });
+  const guides = [
+    { id: "id", icon: "🪪", title: "ID / SSN" },
+    { id: "driving", icon: "🚗", title: "Driving License" },
+    // ... Add other guides keys
+  ];
+
+  const grid = document.getElementById("guidesGrid");
+  grid.innerHTML = "";
+
+  guides.forEach((g) => {
+    const div = document.createElement("div");
+    div.className = "menu-item";
+    div.onclick = () => showGuide(g.id); // Check logic handles access
+    div.innerHTML = `<div class="g-icon">${g.icon}</div><div class="g-title">${g.title}</div>`;
+    grid.appendChild(div);
+  });
 }
 
 // --- DETAILED GUIDES CONTENT (Updated) ---
@@ -1172,9 +1171,9 @@ const guidesData = {
 
 function showGuide(key) {
   checkAccessAndRun(() => {
-  document.getElementById("guideTitle").innerText = key.toUpperCase();
-  document.getElementById("guideContent").innerHTML = guidesData[key];
-  document.getElementById("guideModal").style.display = "flex";
+    document.getElementById("guideTitle").innerText = key.toUpperCase();
+    document.getElementById("guideContent").innerHTML = guidesData[key];
+    document.getElementById("guideModal").style.display = "flex";
   });
 }
 
@@ -1205,11 +1204,11 @@ function searchMap(query) {
 }
 
 // --- DYNAMIC YEAR FOOTER ---
-document.addEventListener('DOMContentLoaded', () => {
-    const yearEl = document.getElementById('currentYear');
-    if (yearEl) {
-        yearEl.textContent = new Date().getFullYear();
-    }
+document.addEventListener("DOMContentLoaded", () => {
+  const yearEl = document.getElementById("currentYear");
+  if (yearEl) {
+    yearEl.textContent = new Date().getFullYear();
+  }
 });
 /* --
 // --- PWA SERVICE WORKER REGISTRATION ---
@@ -1260,3 +1259,29 @@ async function installApp() {
   }
 }
   -- */
+
+// Firebase Update Function
+function updateUserToPremium(uid) {
+  if (!uid || uid === "GUEST_USER") {
+    console.warn("Guest user cannot be updated in DB without login.");
+    return;
+  }
+
+  db.collection("users")
+    .doc(uid)
+    .set(
+      {
+        plan: "lifetime",
+        paidAt: firebase.firestore.FieldValue.serverTimestamp(),
+        status: "supporter",
+      },
+      { merge: true }
+    )
+    .then(() => {
+      console.log("User upgraded to Premium successfully!");
+      checkSubscriptionStatus(uid); // Badge တွေကို Refresh လုပ်မယ်
+    })
+    .catch((error) => {
+      console.error("Error updating user: ", error);
+    });
+}

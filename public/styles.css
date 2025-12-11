@@ -790,3 +790,46 @@ button.primary {
   .coffee-text { display: none; }
   .coffee-btn { padding: 8px; }
 }
+
+/* --- ANNOUNCEMENT BANNER --- */
+.announcement-box {
+  background: linear-gradient(90deg, #ff7e5f, #feb47b); /* Sunset Orange */
+  color: white;
+  padding: 12px 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 15px rgba(255, 126, 95, 0.3);
+  animation: slideDown 0.5s ease;
+}
+
+.announce-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.close-announce {
+  cursor: pointer;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+.close-announce:hover {
+  opacity: 1;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+/* --- ANNOUNCEMENT BANNER Ends --- */

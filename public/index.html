@@ -171,6 +171,22 @@
         </div>
       </header>
 
+      <!-- ANNOUNCEMENT BANNER -->
+      <div
+        id="announcementBanner"
+        style="display: none"
+        class="announcement-box"
+      >
+        <div class="announce-content">
+          <i class="fas fa-bullhorn"></i>
+          <span id="announceText">Loading news...</span>
+        </div>
+        <i
+          class="fas fa-times close-announce"
+          onclick="closeAnnouncement()"
+        ></i>
+      </div>
+
       <div id="contentArea">
         <!-- 1. WALLET TAB -->
         <div id="tab-wallet" class="tab-content active">
@@ -882,7 +898,33 @@
       </div>
     </div>
 
-    <script defer src="payment.js"></script>
+    <!-- Payment Modal -->
+    <div id="paymentModal" class="payment-overlay">
+      <div class="payment-box">
+        <div class="payment-header">
+          <!-- <h3>☕</h3> -->
+          <button onclick="closePaymentUI()" class="close-btn">&times;</button>
+        </div>
+
+        <div class="payment-body">
+          <p style="margin-bottom: 20px; color: #555">
+            Your support helps keep this website running smoothly!
+          </p>
+
+          <!-- ဒီနေရာမှာ PayPal ခလုတ်တွေ ပေါ်လာပါမယ် -->
+          <div id="paypal-button-container"></div>
+
+          <p
+            class="note-text"
+            style="margin-top: 15px; font-size: 12px; color: #888"
+          >
+            Secured by PayPal. You can pay with Card or PayPal account.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script defer src="stripePayment.js"></script>
     <script defer src="app.js"></script>
   </body>
 </html>
