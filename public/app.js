@@ -91,9 +91,9 @@ setupPaymentSystem({
     type: "donation", // <--- ဒီနေရာမှာ donation လို့ သတ်မှတ်လိုက်တာနဲ့ Coffee ပုံစံဖြစ်သွားမယ်
     
     items: {
-        'Coffee': { price: 3, link: 'https://buy.stripe.com/test_coffee' },
-        'Burger': { price: 5, link: 'https://buy.stripe.com/test_burger' },
-        'Big Meal': { price: 10, link: 'https://buy.stripe.com/test_meal' }
+        'Coffee': { price: 5, link: 'https://buy.stripe.com/test_coffee' },
+        'Burger': { price: 8, link: 'https://buy.stripe.com/test_burger' },
+        'Big Meal': { price: 15, link: 'https://buy.stripe.com/test_meal' }
     },
     
     paypalLink: "https://paypal.me/minmaung"
